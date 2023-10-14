@@ -14,7 +14,7 @@ use crate::{
     executor::FuzzExecutor, fuzzer::ItyFuzzer,
 };
 use itertools::Itertools;
-use libafl::feedbacks::Feedback;
+use libafl::{feedbacks::Feedback, stages::StdPowerMutationalStage, schedulers::powersched::{SchedulerMetadata, PowerSchedule}};
 use libafl::prelude::HasMetadata;
 use libafl::prelude::{QueueScheduler, SimpleEventManager};
 use libafl::stages::{CalibrationStage, StdMutationalStage};
@@ -282,7 +282,7 @@ pub fn evm_fuzzer(
 
     let mut feedback = MaxMapFeedback::new(&jmp_observer);
     feedback.init_state(state).expect("Failed to init state");
-    // let calibration = CalibrationStage::new(&feedback);
+    let calibration = CalibrationStage::new(&feedback);
     if config.concolic {
         unsafe {
             unsafe { CONCOLIC_TIMEOUT = config.concolic_timeout };
@@ -324,8 +324,8 @@ pub fn evm_fuzzer(
     );
     let mutator: EVMFuzzMutator = FuzzMutator::new(infant_scheduler.clone());
 
-    let std_stage = StdMutationalStage::new(mutator);
-
+    let std_stage = StdPowerMutationalStage::new(mutator);
+    state.add_metadata(SchedulerMetadata::new(Some(PowerSchedule::FAST)));
     let call_printer_mid = Rc::new(RefCell::new(CallPrinter::new(
         artifacts.address_to_name.clone(),
         artifacts.address_to_sourcemap.clone(),
@@ -338,7 +338,7 @@ pub fn evm_fuzzer(
         config.work_dir.clone(),
     );
 
-    let mut stages = tuple_list!(std_stage, concolic_stage, coverage_obs_stage);
+    let mut stages = tuple_list!(calibration, std_stage, concolic_stage, coverage_obs_stage);
 
     let mut executor = FuzzExecutor::new(evm_executor_ref.clone(), tuple_list!(jmp_observer));
 
