@@ -12,8 +12,8 @@ use crate::scheduler::SortedDroppingScheduler;
 use crate::state::{FuzzState, InfantStateState};
 use crate::state_input::StagedVMState;
 use bytes::Bytes;
-use libafl::prelude::HasRand;
-use libafl::schedulers::QueueScheduler;
+use libafl::prelude::{HasRand, StdMapObserver};
+use libafl::schedulers::{QueueScheduler, PowerQueueScheduler};
 use libafl_bolts::bolts_prelude::{Rand, RomuDuoJrRand};
 use primitive_types::{H160, H256};
 use revm_primitives::ruint::aliases::U512;
@@ -69,7 +69,7 @@ pub type EVMFuzzExecutor<OT> = FuzzExecutor<
 >;
 
 pub type EVMQueueExecutor =
-    EVMExecutor<EVMInput, EVMFuzzState, EVMState, ConciseEVMInput, QueueScheduler<EVMFuzzState>>;
+    EVMExecutor<EVMInput, EVMFuzzState, EVMState, ConciseEVMInput, PowerQueueScheduler<StdMapObserver<'static, u8, false>, EVMFuzzState>>;
 
 /// convert array of 20x u8 to H160
 pub fn convert_H160(v: [u8; 20]) -> H160 {

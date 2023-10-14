@@ -14,7 +14,7 @@ use crate::{
     executor::FuzzExecutor, fuzzer::ItyFuzzer,
 };
 use itertools::Itertools;
-use libafl::feedbacks::Feedback;
+use libafl::{feedbacks::Feedback, schedulers::{PowerQueueScheduler, powersched::PowerSchedule}};
 use libafl::prelude::HasMetadata;
 use libafl::prelude::{QueueScheduler, SimpleEventManager};
 use libafl::stages::{CalibrationStage, StdMutationalStage};
@@ -108,13 +108,14 @@ pub fn evm_fuzzer(
     let monitor = SimpleMonitor::new(|s| println!("{}", s));
     let mut mgr = SimpleEventManager::new(monitor);
     let mut infant_scheduler = SortedDroppingScheduler::new();
-    let mut scheduler = QueueScheduler::new();
+    // let mut scheduler = QueueScheduler::new();
 
     let jmps = unsafe { &mut JMP_MAP };
     let cmps = unsafe { &mut CMP_MAP };
     let reads = unsafe { &mut READ_MAP };
     let writes = unsafe { &mut WRITE_MAP };
     let jmp_observer = unsafe { StdMapObserver::new("jmp", jmps) };
+    let scheduler = PowerQueueScheduler::new(state, &jmp_observer, PowerSchedule::FAST);
 
     let deployer = fixed_address(FIX_DEPLOYER);
     let mut fuzz_host = FuzzHost::new(scheduler.clone(), config.work_dir.clone());
