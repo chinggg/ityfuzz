@@ -283,7 +283,7 @@ pub fn evm_fuzzer(
 
     let mut feedback = MaxMapFeedback::new(&jmp_observer);
     feedback.init_state(state).expect("Failed to init state");
-    // let calibration = CalibrationStage::new(&feedback);
+    let calibration = CalibrationStage::new(&feedback);
     if config.concolic {
         unsafe {
             unsafe { CONCOLIC_TIMEOUT = config.concolic_timeout };
@@ -339,7 +339,7 @@ pub fn evm_fuzzer(
         config.work_dir.clone(),
     );
 
-    let mut stages = tuple_list!(std_stage, concolic_stage, coverage_obs_stage);
+    let mut stages = tuple_list!(calibration, std_stage, concolic_stage, coverage_obs_stage);
 
     let mut executor = FuzzExecutor::new(evm_executor_ref.clone(), tuple_list!(jmp_observer));
 
